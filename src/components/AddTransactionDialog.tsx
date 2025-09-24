@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,11 @@ export function AddTransactionDialog({
   const [isRecurring, setIsRecurring] = useState(editingTransaction?.isRecurring || false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
+  // Reference month/year for the transaction
+  const initialDate = useMemo(() => new Date(editingTransaction?.date || new Date().toISOString()), [editingTransaction?.date]);
+  const [referenceMonth, setReferenceMonth] = useState<number>(initialDate.getMonth()); // 0-11
+  const [referenceYear, setReferenceYear] = useState<number>(initialDate.getFullYear());
+  
   const isEditing = !!editingTransaction;
   
   const validateForm = () => {
@@ -83,7 +88,7 @@ export function AddTransactionDialog({
       amount: parseFloat(amount),
       type,
       category,
-      date: editingTransaction?.date || new Date().toISOString(),
+      date: new Date(referenceYear, referenceMonth, 1).toISOString(),
       isRecurring,
     };
     
@@ -103,6 +108,9 @@ export function AddTransactionDialog({
     setCategory("");
     setIsRecurring(false);
     setErrors({});
+    const now = new Date();
+    setReferenceMonth(now.getMonth());
+    setReferenceYear(now.getFullYear());
     setOpen(false);
     onClose?.();
   };
@@ -233,6 +241,53 @@ export function AddTransactionDialog({
                 </AlertDescription>
               </Alert>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Mês de referência</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Select value={String(referenceMonth)} onValueChange={(value) => setReferenceMonth(Number(value))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Janeiro</SelectItem>
+                    <SelectItem value="1">Fevereiro</SelectItem>
+                    <SelectItem value="2">Março</SelectItem>
+                    <SelectItem value="3">Abril</SelectItem>
+                    <SelectItem value="4">Maio</SelectItem>
+                    <SelectItem value="5">Junho</SelectItem>
+                    <SelectItem value="6">Julho</SelectItem>
+                    <SelectItem value="7">Agosto</SelectItem>
+                    <SelectItem value="8">Setembro</SelectItem>
+                    <SelectItem value="9">Outubro</SelectItem>
+                    <SelectItem value="10">Novembro</SelectItem>
+                    <SelectItem value="11">Dezembro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Select value={String(referenceYear)} onValueChange={(value) => setReferenceYear(Number(value))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const now = new Date();
+                      const currentYear = now.getFullYear();
+                      const years: number[] = [];
+                      for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+                        years.push(y);
+                      }
+                      return years.map((y) => (
+                        <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                      ));
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
           
           <div className="flex items-center space-x-2">
